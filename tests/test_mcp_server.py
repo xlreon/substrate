@@ -109,6 +109,16 @@ class TestGetBundle:
             mcp._do_get_bundle({"id": "../../../etc/passwd"})
         assert exc.value.code == "invalid_id"
 
+    def test_metadata_json_safe_with_yaml_datetime(self, mcp, store: Path):
+        """YAML auto-parses ISO timestamps into datetime; metadata must stay JSON-safe."""
+        (store / "bundles" / "2026-05-11" / "ts.md").write_text(
+            "---\nid: 2026-05-11-ts\ncreated: 2026-05-11T13:15:21+05:30\ntags: [ts]\n---\nbody\n"
+        )
+        out = mcp._do_get_bundle({"id": "2026-05-11-ts"})
+        assert isinstance(out["metadata"]["created"], str)
+        # Must round-trip through json without error.
+        json.dumps(out["metadata"])
+
 
 class TestSearchBundles:
     def test_finds_by_body(self, mcp):
@@ -175,6 +185,61 @@ class TestSchemas:
 
     def test_dispatch_covers_all_tools(self, mcp):
         assert set(mcp.DISPATCH.keys()) == {t.name for t in mcp.TOOLS}
+
+
+class TestCallToolWrapper:
+    """The call_tool wrapper is the seam between handlers and the SDK.
+
+    Unit tests on _do_* miss bugs in the error path (CallToolResult wrapping vs.
+    raw TextContent) and in the success path (output schema validation).
+    """
+
+    def _invoke(self, mcp, name: str, args: dict):
+        import asyncio
+
+        return asyncio.run(mcp.call_tool(name, args))
+
+    def test_success_path_returns_dict(self, mcp):
+        result = self._invoke(mcp, "list_bundles", {})
+        assert isinstance(result, dict)
+        assert "bundles" in result
+
+    def test_error_path_returns_calltoolresult(self, mcp):
+        """The SDK rejects unstructured error responses when outputSchema is declared.
+
+        Errors MUST come back as CallToolResult(isError=True) so the SDK
+        bypasses output validation.
+        """
+        import mcp.types as mcp_types
+
+        result = self._invoke(mcp, "get_bundle", {"id": "no-such-bundle"})
+        assert isinstance(result, mcp_types.CallToolResult), (
+            f"expected CallToolResult, got {type(result).__name__}"
+        )
+        assert result.isError is True
+        body = json.loads(result.content[0].text)
+        assert body["error"] == "not_found"
+
+    def test_invalid_id_error(self, mcp):
+        import mcp.types as mcp_types
+
+        result = self._invoke(mcp, "get_bundle", {"id": "../../etc/passwd"})
+        assert isinstance(result, mcp_types.CallToolResult)
+        assert json.loads(result.content[0].text)["error"] == "invalid_id"
+
+    def test_invalid_date_error(self, mcp):
+        import mcp.types as mcp_types
+
+        result = self._invoke(mcp, "get_by_date", {"date": "yesterday"})
+        assert isinstance(result, mcp_types.CallToolResult)
+        assert json.loads(result.content[0].text)["error"] == "invalid_date"
+
+    def test_unknown_tool_error(self, mcp):
+        import mcp.types as mcp_types
+
+        result = self._invoke(mcp, "does_not_exist", {})
+        assert isinstance(result, mcp_types.CallToolResult)
+        assert json.loads(result.content[0].text)["error"] == "unknown_tool"
 
 
 class TestStdioEndToEnd:

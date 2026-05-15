@@ -75,9 +75,13 @@ def _parse_date_arg(date: str) -> tuple[str, str]:
     )
 
 
-def _error(code: str, message: str) -> list[types.TextContent]:
-    """Errors return UnstructuredContent so they bypass outputSchema validation."""
-    return [types.TextContent(type="text", text=json.dumps({"error": code, "message": message}))]
+def _error(code: str, message: str) -> types.CallToolResult:
+    """Return CallToolResult with isError=True — SDK bypasses outputSchema for this shape."""
+    payload = json.dumps({"error": code, "message": message})
+    return types.CallToolResult(
+        content=[types.TextContent(type="text", text=payload)],
+        isError=True,
+    )
 
 
 TOOLS: list[types.Tool] = [
@@ -253,6 +257,11 @@ def _do_list_bundles(args: dict) -> dict:
     return {"bundles": out}
 
 
+def _json_safe(value):
+    """Coerce YAML-parsed values (datetime, date) to JSON-serializable forms."""
+    return json.loads(json.dumps(value, default=str))
+
+
 def _do_get_bundle(args: dict) -> dict:
     _check_init()
     bid = args["id"]
@@ -262,9 +271,9 @@ def _do_get_bundle(args: dict) -> dict:
     if f is None:
         raise SubstrateError("not_found", f"no bundle matches id {bid!r}")
     text = f.read_text()
-    meta = _parse_frontmatter(f)
+    metadata = _json_safe(_parse_frontmatter(f))
     body = _strip_frontmatter(text) if args.get("strip_frontmatter") else text
-    return {"id": str(meta.get("id") or f.stem), "body": body, "metadata": meta}
+    return {"id": str(metadata.get("id") or f.stem), "body": body, "metadata": metadata}
 
 
 def _do_search_bundles(args: dict) -> dict:
@@ -341,7 +350,7 @@ async def list_tools() -> list[types.Tool]:
 
 
 @server.call_tool()
-async def call_tool(name: str, arguments: dict[str, Any] | None) -> dict | list[types.TextContent]:
+async def call_tool(name: str, arguments: dict[str, Any] | None) -> dict | types.CallToolResult:
     handler = DISPATCH.get(name)
     if handler is None:
         return _error("unknown_tool", f"no such tool: {name}")
