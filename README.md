@@ -1,5 +1,7 @@
 # Substrate
 
+![private](https://img.shields.io/badge/repo-private-red?logo=github)
+
 Local prompt+context bundles with git-backed versioning. CLI-first, single file.
 
 ## Install
