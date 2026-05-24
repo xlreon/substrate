@@ -2,7 +2,7 @@
 
 **Version:** 0.1 (v0 shipped May 11, 2026)
 **Status:** Trial week active. **Gate 0 = Friday May 15, 6 PM IST.**
-**Authoritative companion docs:** [`one-pager.md`](./one-pager.md), [`cli.py`](./cli.py)
+**Authoritative companion docs:** [`cli.py`](./cli.py)
 
 > Substrate is a local-first prompt+context bundle library with git-backed versioning. v0 ships as a CLI; v1.0 adds an MCP server that exposes the bundle store to any MCP-aware AI client. This document specifies the full system through enterprise (v4), with each phase gated on a falsifiable success criterion.
 
@@ -10,7 +10,7 @@
 
 - **Shipped (v0):** CLI with `init / add / list / get / use / log / edit / history`. Stores markdown bundles with YAML frontmatter under `~/.substrate/bundles/YYYY-MM-DD/`. Git-versioned. Append-only usage log = falsifiable metric.
 - **Next (v1.0, conditional Wed May 13):** MCP server over stdio exposing `list_bundles / get_bundle / search_bundles / get_by_date / log_use`. Installed in Claude Code, Cursor, Zed via one config line.
-- **Hard gate:** Substrate's continued existence depends on Gate 0 passing on Friday May 15, 6 PM IST. ≥5 `substrate use` entries with notes mapping to real shipped artifacts (Guvio PR, blog draft, day-job RFC/PR). FAIL → archive Saturday morning.
+- **Hard gate:** Substrate's continued existence depends on Gate 0 passing on Friday May 15, 6 PM IST. ≥5 `substrate use` entries with notes mapping to real shipped artifacts (production PR, blog draft, work RFC/PR). FAIL → archive Saturday morning.
 - **Architecture invariant:** Markdown files on disk are source-of-truth. Every index, every cache, every embedding is disposable and rebuildable.
 
 ## Section Index
@@ -71,14 +71,14 @@ Solid = ships at or before the Friday May 15 gate clears. Dashed = post-gate.
 ```yaml
 ---
 # REQUIRED
-id: 2026-05-11-guvio-pdf-import     # "<created-date>-<slug>", globally unique
-created: 2026-05-11T10:14:22+05:30  # ISO 8601 with offset
-tags: [guvio, backend, import]      # list[str], lowercase, kebab-case
+id: 2026-05-11-api-error-handling-pattern  # "<created-date>-<slug>", globally unique
+created: 2026-05-11T10:14:22+05:30        # ISO 8601 with offset
+tags: [backend, api, error-handling]       # list[str], lowercase, kebab-case
 
 # OPTIONAL
 context_refs: []                    # list[ContextRef] — see taxonomy
 expected_output_signature: |        # informal description of what "good" output looks like
-  PR diff touching guvio-backend/
+  PR diff touching backend/
   with passing tests
 author: sid                         # string, single value (multi-author = v3)
 updated: 2026-05-11T11:02:00+05:30  # set on edit
@@ -91,10 +91,10 @@ status: draft | active | archived   # default: active
 
 ```yaml
 context_refs:
-  - { kind: file,   path: guvio-backend/app/services/documents.py, rev: HEAD }
+  - { kind: file,   path: backend/app/services/documents.py, rev: HEAD }
   - { kind: graph,  engine: gitnexus, query: "context EncryptionService" }
-  - { kind: memory, key: "project-guvio-launch-posture" }
-  - { kind: url,    href: "https://www.dpdpa.gov.in/..." , captured: 2026-05-11 }
+  - { kind: memory, key: "project-launch-posture" }
+  - { kind: url,    href: "https://example.com/api-docs" , captured: 2026-05-11 }
   - { kind: inline, label: "raw paste", body: "<embedded>" }
 ```
 
@@ -108,7 +108,7 @@ Unknown kinds are preserved untouched but ignored by tooling.
 ├── .gitignore                       # ignores usage.log (private metric, noisy diffs)
 ├── bundles/
 │   └── 2026-05-11/                  # one folder per local-date (timezone-aware)
-│       ├── guvio-pdf-import.md
+│       ├── api-error-handling-pattern.md
 │       └── council-rate-limit.md
 └── usage.log                        # append-only TSV: "<iso-ts>\t<bundle_id>\t<note>\n"
 ```
@@ -585,14 +585,16 @@ No PR merges with any missing.
 
 ## 6. Roadmap, Gates, and Risks
 
+> **Historical context.** The gates below are the original maintainer's commitment to falsifiability — each phase of substrate's development was gated on measurable evidence that the tool earned its keep. Public users can safely ignore these gates; they're preserved here to show the decision framework that shaped the project.
+
 Each gate has a date, single success criterion, explicit kill action on FAIL, defined unlock on PASS. **No item ships before its prior gate clears.** The spine of this project is the willingness to fold it at any gate.
 
 The Friday May 15 gate may well fail. This spec is written assuming it might. That is the point.
 
 ### Gate 0 — Friday May 15, 2026, 6:00 PM IST
 
-- **Criterion:** `substrate log --since 2026-05-11` shows **≥5 entries**, each with a `--note` naming a real shipped artifact: Guvio PR number, blog post draft filename, day-job RFC/PR/design-doc title. Anonymous notes ("testing") do not count.
-- **FAIL → Kill action:** Saturday May 16 morning, archive repo to `~/code/archive/substrate-2026-05/`, delete `~/.substrate/`, write 200-word post-mortem to `~/code/billion/substrate-postmortem.md`. No v1, no MCP. The one-pager's "Single decision criterion" authorizes this.
+- **Criterion:** `substrate log --since 2026-05-11` shows **≥5 entries**, each with a `--note` naming a real shipped artifact: production PR number, blog post draft filename, work RFC/PR/design-doc title. Anonymous notes ("testing") do not count.
+- **FAIL → Kill action:** Saturday May 16 morning, archive repo, delete `~/.substrate/`, write 200-word post-mortem. No v1, no MCP.
 - **PASS → Unlocks:** Gate 1. Permission to spend week 2 on MCP server.
 
 ### Gate 1 — Wednesday May 20, 2026
@@ -603,14 +605,14 @@ The Friday May 15 gate may well fail. This spec is written assuming it might. Th
 
 ### Gate 2 — Monday June 1, 2026
 
-- **Criterion:** Sustained personal use: **25+ bundles authored, 50+ `use` invocations** in 3-week window since Gate 0. Plus measurable Guvio velocity delta — comparable tasks (CRUD endpoint, Tiptap extension, Alembic migration) ship ≥30% faster than prior 6-week baseline, computed from PR cycle time.
-- **FAIL → Kill action:** Fold into Guvio as private prompt folder. No productization. No OSS. One-pager's fallback ("lawyer-AI-coach module inside Guvio") is the path.
+- **Criterion:** Sustained personal use: **25+ bundles authored, 50+ `use` invocations** in 3-week window since Gate 0. Plus measurable velocity delta — comparable tasks (CRUD endpoint, frontend extension, database migration) ship ≥30% faster than prior 6-week baseline, computed from PR cycle time.
+- **FAIL → Kill action:** Keep as private prompt folder. No productization. No OSS.
 - **PASS → Unlocks:** Gate 3. Begin OSS prep.
 
 ### Gate 3 — Tuesday July 15, 2026
 
 - **Criterion:** OSS release on GitHub by July 1, soft launch on HN/X. By July 15: **200 GitHub stars OR 20 active external users** (≥3 invocations each, evidenced by Discord/issues/DMs).
-- **FAIL → Kill action:** Keep as personal tool. Archive repo as "released, not maintained." No v2/v3/v4. Refocus on Guvio.
+- **FAIL → Kill action:** Keep as personal tool. Archive repo as "released, not maintained." No v2/v3/v4.
 - **PASS → Unlocks:** Gate 4. Begin Tauri authoring app prototype.
 
 ### Gate 4 — November 30, 2026 (Q4)
@@ -621,7 +623,7 @@ The Friday May 15 gate may well fail. This spec is written assuming it might. Th
 
 ### Gate 5 — June 30, 2027 (H1)
 
-- **Criterion:** Enterprise CI/CD integration (Jira/Linear → bundle → agent → audit) with **1 signed pilot at Indian regulated-industry firm** sourced from Guvio network, contract ≥₹5L.
+- **Criterion:** Enterprise CI/CD integration (Jira/Linear → bundle → agent → audit) with **1 signed pilot at a regulated-industry firm**, contract ≥₹5L.
 - **FAIL → Kill action:** SMB SaaS only. Drop compliance-edition thesis.
 - **PASS → Unlocks:** Second pilot, then GTM build-out.
 
