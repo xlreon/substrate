@@ -12,6 +12,8 @@ Git-versioned · MCP-native · Lives in your filesystem as plain markdown.
 
 </div>
 
+[📖 Full docs](https://substrate.sidharthsatapathy.com) · [Blog post](https://substrate.sidharthsatapathy.com/blog/2026-05-substrate-and-context-rich-agents)
+
 ---
 
 Substrate is a local-first knowledge store designed for the agent era. You write a "bundle" — a markdown file with YAML frontmatter — and any MCP-compatible AI tool (Claude Code, Cursor, Zed, Continue, …) can pull it into context on demand. No daemon, no database, no embeddings server. Files on disk are the source of truth; git is the history; an MCP server is the agent-facing API.
@@ -69,6 +71,28 @@ substrate ui --open                        # static HTML dashboard
 ```
 
 Bundles are markdown files under `~/.substrate/bundles/YYYY-MM-DD/`. Every `add` and `edit` commits to git automatically.
+
+## Where your bundles live
+
+Substrate code lives at [github.com/xlreon/substrate](https://github.com/xlreon/substrate). You install the binary — you don't fork or clone unless you want to contribute.
+
+**Your bundles live in `~/.substrate/bundles/YYYY-MM-DD/<slug>.md`. Your data, not ours.**
+
+`substrate init` git-inits `~/.substrate/` locally so you get versioning for free. Want to back it up?
+
+```bash
+cd ~/.substrate && git remote add origin <your-private-repo> && git push -u origin main
+```
+
+Want to move the store? Set `SUBSTRATE_HOME`:
+
+```bash
+export SUBSTRATE_HOME=/opt/team-substrate    # shared NFS mount
+export SUBSTRATE_HOME=~/Dropbox/substrate    # synced folder
+export SUBSTRATE_HOME=./project-substrate    # project-local
+```
+
+Substrate honors `SUBSTRATE_HOME` everywhere — CLI, MCP server, dashboard.
 
 ## For AI agents (MCP)
 
@@ -174,6 +198,13 @@ Full reference: `substrate --help`. Design notes: [SPEC.md](SPEC.md).
 ## Contributing
 
 PRs welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for dev setup and conventions. Bug reports and feature requests: [open an issue](https://github.com/xlreon/substrate/issues).
+
+## Support substrate
+
+- ⭐ Star on GitHub if substrate earns its keep in your workflow
+- 💬 Share use cases in [Discussions](https://github.com/xlreon/substrate/discussions)
+- 🐛 File issues, especially for cross-platform breakage
+- 📝 Write up your integration — we'll link it from the docs
 
 ## License
 

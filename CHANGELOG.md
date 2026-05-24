@@ -13,7 +13,7 @@ All notable changes to this project will be documented in this file. The format 
 - "Most referenced" score computed without `log_use` dependency: mentions in the active file × 4 + git commit count + (legacy `log_use` count × 2) + active-session bonus.
 
 ### Changed
-- README rewritten for open-source release; removed personal/Guvio examples.
+- README rewritten for open-source release; removed personal examples and internal references.
 - Active-session detection is no longer hardcoded to any personal file path.
 
 ### Fixed
