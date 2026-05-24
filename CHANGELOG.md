@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file. The format 
 
 ## [Unreleased]
 
+### Added
+- `substrate add` now supports non-interactive input channels:
+  - `--body TEXT` / `-b` — inline body string
+  - `--from FILE` / `-f` — read body from a file path
+  - `--from -` — read body from stdin (pipe-friendly)
+  - `--edit` — force open `$EDITOR` after pre-fill (otherwise editor is skipped when a body source is provided)
+- `_resolve_body()` helper for resolving content from `--body`/`--from`, including stdin and frontmatter-stripping when the source file already has YAML frontmatter.
+
 ## [0.2.0] - 2026-05-24
 
 ### Added

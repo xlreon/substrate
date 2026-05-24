@@ -81,6 +81,30 @@ def _strip_frontmatter(text: str) -> str:
     return text[end + 4 :].lstrip()
 
 
+def _resolve_body(body: str | None, from_path: str | None) -> str | None:
+    """Resolve bundle body content from --body or --from sources.
+
+    Returns the body text (with any user-supplied frontmatter stripped) or
+    ``None`` if no source was provided. ``--from -`` reads from stdin.
+
+    Raises ``typer.Exit`` on mutex violation or missing file.
+    """
+    if body is not None and from_path is not None:
+        typer.echo("error: --body and --from are mutually exclusive", err=True)
+        raise typer.Exit(2)
+    if body is not None:
+        return _strip_frontmatter(body)
+    if from_path is not None:
+        if from_path == "-":
+            return _strip_frontmatter(sys.stdin.read())
+        p = Path(from_path).expanduser()
+        if not p.exists():
+            typer.echo(f"error: file not found: {p}", err=True)
+            raise typer.Exit(1)
+        return _strip_frontmatter(p.read_text())
+    return None
+
+
 def _find_bundle(bundle_id: str) -> Path | None:
     for f in BUNDLES.rglob("*.md"):
         if _parse_frontmatter(f).get("id") == bundle_id:
@@ -162,9 +186,41 @@ def init() -> None:
 def add(
     name: str,
     tag: list[str] = typer.Option([], "--tag", "-t", help="tag (repeatable)"),
+    body: str = typer.Option(
+        None,
+        "--body",
+        "-b",
+        help="Inline body text. Skips $EDITOR unless --edit is also passed.",
+    ),
+    from_path: str = typer.Option(
+        None,
+        "--from",
+        "-f",
+        metavar="FILE",
+        help="Read body from FILE (use '-' for stdin). Skips $EDITOR unless --edit is also passed.",
+    ),
+    edit: bool = typer.Option(
+        False,
+        "--edit/--no-edit",
+        help="Force open $EDITOR after pre-fill from --body or --from.",
+    ),
 ) -> None:
-    """Create a new bundle in today's folder and open it in $EDITOR."""
+    """Create a new bundle in today's folder.
+
+    Default: opens $EDITOR with an empty template.
+
+    Non-interactive channels:
+
+    \b
+      substrate add "name" --body "the body text"
+      substrate add "name" --from path/to/file.md
+      cat note.md | substrate add "name" --from -
+      echo "quick note" | substrate add "name" --from -
+
+    Pass --edit to pre-fill from --body/--from and then open the editor.
+    """
     _ensure_init()
+    content = _resolve_body(body, from_path)
     today = datetime.now().strftime("%Y-%m-%d")
     folder = BUNDLES / today
     folder.mkdir(exist_ok=True)
@@ -175,9 +231,20 @@ def add(
         typer.echo(f"already exists: {path}", err=True)
         raise typer.Exit(1)
     ts = datetime.now().astimezone().isoformat(timespec="seconds")
-    path.write_text(TEMPLATE.format(id=bundle_id, ts=ts, tags=list(tag)))
-    editor = os.environ.get("EDITOR", "nvim")
-    subprocess.call([editor, str(path)])
+    header = TEMPLATE.format(id=bundle_id, ts=ts, tags=list(tag))
+    if content is not None:
+        # Replace the placeholder body section with the supplied content.
+        # Header (frontmatter + blank line) is preserved; placeholder prose
+        # below it is replaced wholesale.
+        frontmatter_end = header.find("\n---", 3)
+        frontmatter = header[: frontmatter_end + 4]
+        path.write_text(f"{frontmatter}\n{content.rstrip()}\n")
+    else:
+        path.write_text(header)
+    should_edit = content is None or edit
+    if should_edit:
+        editor = os.environ.get("EDITOR", "nvim")
+        subprocess.call([editor, str(path)])
     _commit(f"add {bundle_id}")
     typer.echo(f"saved: {bundle_id}")
 
