@@ -277,9 +277,9 @@ def log(since: str = typer.Option(None, "--since", "-s", help="YYYY-MM-DD")) -> 
     if not USAGE_LOG.exists() or USAGE_LOG.stat().st_size == 0:
         typer.echo("(no usage yet)")
         return
-    lines = [l for l in USAGE_LOG.read_text().splitlines() if l]
+    lines = [ln for ln in USAGE_LOG.read_text().splitlines() if ln]
     if since:
-        lines = [l for l in lines if l.split("\t", 1)[0] >= since]
+        lines = [ln for ln in lines if ln.split("\t", 1)[0] >= since]
     table = Table(show_header=True, header_style="bold", title=f"{len(lines)} uses")
     table.add_column("when")
     table.add_column("bundle", style="cyan")
@@ -305,22 +305,49 @@ def edit(bundle_id: str) -> None:
     _commit(f"edit {_parse_frontmatter(f).get('id', f.stem)}")
 
 
-_MEMORY_MD = Path.home() / ".claude/projects/-Users-sidharthsatapathy-code/memory/MEMORY.md"
+_ACTIVE_ENV = "SUBSTRATE_ACTIVE_FILE"
+_ACTIVE_MARKER_ENV = "SUBSTRATE_ACTIVE_MARKER"
+_DEFAULT_ACTIVE_MARKER = "ACTIVE BUNDLE"
 
 
-def _read_memory_text() -> str:
+def _resolve_active_file() -> Path | None:
+    """Return the path of an external file that may declare the active bundle.
+
+    Configured via ``SUBSTRATE_ACTIVE_FILE`` env var (e.g. an AGENTS.md,
+    CLAUDE.md, NOTES.md, or any markdown file). Tildes and env vars in the
+    value are expanded. Returns ``None`` when unset or missing.
+    """
+    raw = os.environ.get(_ACTIVE_ENV)
+    if not raw:
+        return None
+    p = Path(os.path.expandvars(os.path.expanduser(raw)))
+    return p if p.exists() else None
+
+
+def _read_active_text() -> str:
+    p = _resolve_active_file()
+    if p is None:
+        return ""
     try:
-        return _MEMORY_MD.read_text() if _MEMORY_MD.exists() else ""
-    except Exception:
+        return p.read_text()
+    except OSError:
         return ""
 
 
-def _find_active_bundle_id(memory_text: str) -> str | None:
-    """Extract the bundle id behind the most recent 'NEXT SESSION KICKOFF' line."""
-    for line in memory_text.splitlines():
-        if "NEXT SESSION KICKOFF" not in line:
+def _find_active_bundle_id(text: str) -> str | None:
+    """Extract a substrate bundle id from a marker line in user-supplied text.
+
+    Looks for the first line containing ``SUBSTRATE_ACTIVE_MARKER`` (default
+    "ACTIVE BUNDLE") and matches a path of shape
+    ``<anything>/bundles/YYYY-MM-DD/<stem>.md``.
+    """
+    if not text:
+        return None
+    marker = os.environ.get(_ACTIVE_MARKER_ENV, _DEFAULT_ACTIVE_MARKER)
+    for line in text.splitlines():
+        if marker not in line:
             continue
-        m = re.search(r"~/\.substrate/bundles/(\d{4}-\d{2}-\d{2})/([^`\s/]+)\.md", line)
+        m = re.search(r"bundles/(\d{4}-\d{2}-\d{2})/([^`\s/]+)\.md", line)
         if m:
             stem = m.group(2)
             return stem if stem.startswith(m.group(1)) else f"{m.group(1)}-{stem}"
@@ -371,7 +398,7 @@ def _build_chart(counts_by_day: dict[str, int], days: int = 30) -> tuple[str, st
     gap = 2.0
     bar_w = (w - gap * (days - 1)) / days
     bars: list[str] = []
-    for i, (d, c) in enumerate(zip(seq, counts)):
+    for i, (d, c) in enumerate(zip(seq, counts, strict=True)):
         bh = (c / maxc) * (h - 8) if c else 2.0
         x = i * (bar_w + gap)
         y = h - bh
@@ -787,7 +814,7 @@ dialog.modal::backdrop{{
       </label>
       <label>
         <span class="field-label">Tags (comma-separated)</span>
-        <input id="f-tags" type="text" placeholder="e.g. handoff, guvio-backend, fly">
+        <input id="f-tags" type="text" placeholder="e.g. handoff, backend, deployment">
       </label>
       <label>
         <span class="field-label">Body (markdown)</span>
@@ -978,10 +1005,10 @@ def ui(
         "table"
     )
 
-    memory_text = _read_memory_text()
+    active_text = _read_active_text()
     commit_counts = _commit_counts()
     usage_counts = _usage_counts()
-    active_id = _find_active_bundle_id(memory_text)
+    active_id = _find_active_bundle_id(active_text)
 
     bundles: list[dict] = []
     for f in BUNDLES.rglob("*.md"):
@@ -1001,11 +1028,11 @@ def ui(
         short = _short_id(bundle_id, day)
         mentions = (
             (
-                memory_text.count(bundle_id)
-                + (memory_text.count(short) if short != bundle_id else 0)
-                + memory_text.count(rel)
+                active_text.count(bundle_id)
+                + (active_text.count(short) if short != bundle_id else 0)
+                + active_text.count(rel)
             )
-            if memory_text
+            if active_text
             else 0
         )
         commits = commit_counts.get(rel, 0)

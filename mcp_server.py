@@ -371,7 +371,7 @@ async def list_resources() -> list[types.Resource]:
         bid = str(meta.get("id") or f.stem)
         out.append(
             types.Resource(
-                uri=f"substrate://bundle/{bid}",
+                uri=f"substrate://bundle/{bid}",  # type: ignore[arg-type]
                 name=bid,
                 description=", ".join(str(t) for t in (meta.get("tags") or [])) or None,
                 mimeType="text/markdown",
