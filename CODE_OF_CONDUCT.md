@@ -34,7 +34,7 @@ This Code of Conduct applies within all community spaces (issues, pull requests,
 
 ## Enforcement
 
-Instances of abusive, harassing, or otherwise unacceptable behavior may be reported to the maintainers at the email address listed in the project's GitHub profile. All complaints will be reviewed and investigated promptly and fairly.
+Instances of abusive, harassing, or otherwise unacceptable behavior may be reported to the community leaders responsible for enforcement at `sidharth.satapathy5@gmail.com`. All complaints will be reviewed and investigated promptly and fairly.
 
 ## Attribution
 
