@@ -2,15 +2,19 @@
 
 from __future__ import annotations
 
+import html
+import json
 import os
 import re
 import subprocess
 import sys
+from collections import Counter
 from datetime import datetime
 from pathlib import Path
 
 import typer
 import yaml
+from markdown_it import MarkdownIt
 from rich.console import Console
 from rich.table import Table
 
@@ -299,6 +303,222 @@ def edit(bundle_id: str) -> None:
     editor = os.environ.get("EDITOR", "nvim")
     subprocess.call([editor, str(f)])
     _commit(f"edit {_parse_frontmatter(f).get('id', f.stem)}")
+
+
+_MEMORY_MD = Path.home() / ".claude/projects/-Users-sidharthsatapathy-code/memory/MEMORY.md"
+
+
+def _find_active_bundle_id() -> str | None:
+    """Read MEMORY.md and extract the bundle filename behind 'NEXT SESSION KICKOFF'."""
+    if not _MEMORY_MD.exists():
+        return None
+    for line in _MEMORY_MD.read_text().splitlines():
+        if "NEXT SESSION KICKOFF" not in line:
+            continue
+        m = re.search(r"~/\.substrate/bundles/(\d{4}-\d{2}-\d{2})/([^`\s/]+)\.md", line)
+        if m:
+            return (
+                f"{m.group(1)}-{m.group(2)}"
+                if not m.group(2).startswith(m.group(1))
+                else m.group(2)
+            )
+    return None
+
+
+_UI_TEMPLATE = """<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>substrate — {count} bundles</title>
+<style>
+  :root {{
+    --bg: #0d0f12; --fg: #e4e6eb; --dim: #8a8f98; --line: #1f2329;
+    --accent: #ff8c42; --accent-dim: #4a3120; --card: #14171c; --hover: #1a1e25;
+  }}
+  * {{ box-sizing: border-box; }}
+  body {{ margin: 0; padding: 0; background: var(--bg); color: var(--fg);
+          font: 14px/1.55 -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif; }}
+  code, pre, .mono {{ font: 13px/1.5 "SF Mono", Menlo, monospace; }}
+  header {{ position: sticky; top: 0; background: var(--bg); border-bottom: 1px solid var(--line);
+            padding: 14px 22px; z-index: 10; }}
+  header h1 {{ margin: 0 0 8px; font-size: 16px; font-weight: 600; }}
+  header h1 .meta {{ color: var(--dim); font-weight: 400; margin-left: 10px; font-size: 13px; }}
+  header input {{ width: 100%; max-width: 480px; background: var(--card); color: var(--fg);
+                  border: 1px solid var(--line); border-radius: 6px; padding: 7px 10px; font-size: 13px; }}
+  header input:focus {{ outline: none; border-color: var(--accent); }}
+  .tags-bar {{ margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; }}
+  .tag-chip {{ background: var(--card); color: var(--dim); border: 1px solid var(--line);
+               border-radius: 12px; padding: 2px 9px; font-size: 11px; cursor: pointer;
+               user-select: none; transition: all 0.15s; }}
+  .tag-chip:hover {{ color: var(--fg); border-color: var(--dim); }}
+  .tag-chip.active {{ background: var(--accent-dim); color: var(--accent); border-color: var(--accent); }}
+  main {{ padding: 20px 22px 60px; max-width: 980px; }}
+  .card {{ background: var(--card); border: 1px solid var(--line); border-radius: 8px;
+           margin-bottom: 12px; transition: border-color 0.15s; }}
+  .card:hover {{ border-color: #2a2f37; }}
+  .card.active {{ border-color: var(--accent); background: linear-gradient(180deg, #1c1410 0%, var(--card) 60%); }}
+  .card-head {{ padding: 12px 16px; cursor: pointer; display: flex; align-items: baseline;
+                gap: 10px; flex-wrap: wrap; }}
+  .card-head .id {{ color: var(--fg); font-weight: 500; font-size: 13.5px; }}
+  .card.active .card-head .id {{ color: var(--accent); }}
+  .card-head .date {{ color: var(--dim); font-size: 12px; }}
+  .card-head .tags {{ margin-left: auto; display: flex; gap: 4px; flex-wrap: wrap; }}
+  .card-head .tags span {{ color: var(--dim); font-size: 11px;
+                            background: var(--bg); padding: 1px 6px; border-radius: 8px; }}
+  .card-body {{ display: none; padding: 4px 22px 18px; border-top: 1px solid var(--line);
+                color: #cbd0d6; }}
+  .card.open .card-body {{ display: block; }}
+  .card-body h1, .card-body h2, .card-body h3 {{ color: var(--fg); margin: 18px 0 8px; }}
+  .card-body h1 {{ font-size: 16px; }}
+  .card-body h2 {{ font-size: 14.5px; }}
+  .card-body h3 {{ font-size: 13.5px; }}
+  .card-body p {{ margin: 8px 0; }}
+  .card-body code {{ background: var(--bg); padding: 1px 5px; border-radius: 3px; }}
+  .card-body pre {{ background: var(--bg); padding: 10px 12px; border-radius: 5px; overflow-x: auto;
+                    border: 1px solid var(--line); }}
+  .card-body pre code {{ background: none; padding: 0; }}
+  .card-body a {{ color: var(--accent); }}
+  .card-body ul, .card-body ol {{ padding-left: 22px; }}
+  .card-body table {{ border-collapse: collapse; margin: 10px 0; }}
+  .card-body th, .card-body td {{ border: 1px solid var(--line); padding: 4px 10px; font-size: 13px; }}
+  .card-body blockquote {{ border-left: 3px solid var(--line); padding-left: 12px; color: var(--dim); margin: 8px 0; }}
+  .empty {{ color: var(--dim); padding: 40px; text-align: center; }}
+  .pill {{ background: var(--accent); color: var(--bg); font-size: 10px; font-weight: 600;
+           padding: 1px 7px; border-radius: 8px; text-transform: uppercase; letter-spacing: 0.3px; }}
+</style>
+</head>
+<body>
+<header>
+  <h1>substrate <span class="meta">{count} bundles · regenerated {built_at}</span></h1>
+  <input id="q" type="text" placeholder="search id, tags, body…" autocomplete="off">
+  <div class="tags-bar" id="tags-bar"></div>
+</header>
+<main id="cards">{cards}</main>
+<script>
+  const DATA = {data_json};
+  const cards = document.getElementById('cards');
+  const q = document.getElementById('q');
+  const tagsBar = document.getElementById('tags-bar');
+  let activeTag = null;
+
+  // Build tag chips, sorted by count desc
+  const tagCounts = {tag_counts_json};
+  Object.entries(tagCounts).sort((a,b) => b[1]-a[1]).slice(0, 30).forEach(([t, n]) => {{
+    const chip = document.createElement('span');
+    chip.className = 'tag-chip';
+    chip.textContent = t + ' ' + n;
+    chip.dataset.tag = t;
+    chip.addEventListener('click', () => {{
+      activeTag = (activeTag === t) ? null : t;
+      [...tagsBar.children].forEach(c => c.classList.toggle('active', c.dataset.tag === activeTag));
+      filter();
+    }});
+    tagsBar.appendChild(chip);
+  }});
+
+  function filter() {{
+    const needle = q.value.trim().toLowerCase();
+    let shown = 0;
+    document.querySelectorAll('.card').forEach((el, i) => {{
+      const d = DATA[i];
+      const matchesText = !needle ||
+        d.id.toLowerCase().includes(needle) ||
+        d.tags.some(t => t.toLowerCase().includes(needle)) ||
+        d.body_text.toLowerCase().includes(needle);
+      const matchesTag = !activeTag || d.tags.includes(activeTag);
+      const show = matchesText && matchesTag;
+      el.style.display = show ? '' : 'none';
+      if (show) shown++;
+    }});
+    document.querySelector('header h1 .meta').textContent =
+      shown + ' of {count} bundles · regenerated {built_at}';
+  }}
+
+  q.addEventListener('input', filter);
+
+  // Click to expand
+  document.querySelectorAll('.card-head').forEach(h => {{
+    h.addEventListener('click', () => h.parentElement.classList.toggle('open'));
+  }});
+
+  // Auto-expand the active card
+  const active = document.querySelector('.card.active');
+  if (active) active.classList.add('open');
+</script>
+</body>
+</html>
+"""
+
+
+def _render_card(b: dict, is_active: bool) -> str:
+    tag_html = "".join(f"<span>{html.escape(t)}</span>" for t in b["tags"][:6])
+    pill = '<span class="pill">active</span> ' if is_active else ""
+    return (
+        f'<div class="card{" active" if is_active else ""}">'
+        f'<div class="card-head">{pill}'
+        f'<span class="id mono">{html.escape(b["id"])}</span>'
+        f'<span class="date">{html.escape(b["date"])}</span>'
+        f'<span class="tags">{tag_html}</span>'
+        f"</div>"
+        f'<div class="card-body">{b["body_html"]}</div>'
+        f"</div>"
+    )
+
+
+@app.command()
+def ui(
+    output: Path = typer.Option(
+        None, "--output", "-o", help="output html path (default ~/.substrate/index.html)"
+    ),
+    open_browser: bool = typer.Option(False, "--open", help="open in browser after writing"),
+) -> None:
+    """Generate a static HTML dashboard of all bundles."""
+    _ensure_init()
+    out_path = output or (ROOT / "index.html")
+    md = MarkdownIt("commonmark", {"html": False, "linkify": True, "typographer": True}).enable(
+        "table"
+    )
+
+    bundles: list[dict] = []
+    for f in BUNDLES.rglob("*.md"):
+        text = f.read_text()
+        meta = _parse_frontmatter(f)
+        body = _strip_frontmatter(text)
+        tags = [str(t) for t in (meta.get("tags") or [])]
+        bundle_id = str(meta.get("id") or f.stem)
+        bundles.append(
+            {
+                "id": bundle_id,
+                "tags": tags,
+                "date": f.parent.name if re.match(r"^\d{4}-\d{2}-\d{2}$", f.parent.name) else "",
+                "mtime": f.stat().st_mtime,
+                "body_html": md.render(body),
+                "body_text": body,
+            }
+        )
+    bundles.sort(key=lambda b: b["mtime"], reverse=True)
+
+    active_id = _find_active_bundle_id()
+    tag_counts: Counter[str] = Counter()
+    for b in bundles:
+        tag_counts.update(b["tags"])
+
+    cards_html = "".join(_render_card(b, b["id"] == active_id) for b in bundles)
+    data_json = json.dumps(
+        [{"id": b["id"], "tags": b["tags"], "body_text": b["body_text"]} for b in bundles]
+    )
+    built_at = datetime.now().strftime("%Y-%m-%d %H:%M")
+    rendered = _UI_TEMPLATE.format(
+        count=len(bundles),
+        built_at=built_at,
+        cards=cards_html or '<div class="empty">no bundles yet</div>',
+        data_json=data_json,
+        tag_counts_json=json.dumps(dict(tag_counts)),
+    )
+    out_path.write_text(rendered)
+    typer.echo(f"wrote {out_path} ({len(bundles)} bundles, active: {active_id or '—'})")
+    if open_browser:
+        subprocess.run(["open", str(out_path)], check=False)
 
 
 @app.command()
