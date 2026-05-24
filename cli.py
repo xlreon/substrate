@@ -253,7 +253,7 @@ def get(bundle_id: str) -> None:
 @app.command()
 def use(
     bundle_id: str,
-    note: str = typer.Option("", "--note", "-n", help="why you used it (e.g. Guvio PR #)"),
+    note: str = typer.Option("", "--note", "-n", help="why you used it (e.g. PR #, RFC slug)"),
 ) -> None:
     """Copy a bundle to clipboard (without frontmatter) and log the use."""
     _ensure_init()
