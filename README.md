@@ -70,6 +70,19 @@ substrate get 2026-05-24-deploy-staging-landmines | pbcopy
 substrate ui --open                        # static HTML dashboard
 ```
 
+### Adding bundles non-interactively
+
+`substrate add` opens `$EDITOR` by default. For scripted use, four other channels:
+
+```bash
+substrate add "inline note" --body "the body text"           # inline string
+substrate add "from a file" --from path/to/note.md           # file path
+cat note.md | substrate add "piped in" --from -              # stdin
+substrate add "draft + tweak" --body "starter" --edit        # pre-fill, then $EDITOR
+```
+
+`--body` and `--from` are mutually exclusive. Both strip leading YAML frontmatter from the source so substrate's own frontmatter is canonical.
+
 Bundles are markdown files under `~/.substrate/bundles/YYYY-MM-DD/`. Every `add` and `edit` commits to git automatically.
 
 ## Where your bundles live
@@ -175,7 +188,7 @@ In that file, add a line containing `ACTIVE BUNDLE` and the bundle path:
 | Command | What it does |
 |---|---|
 | `substrate init` | Initialize `~/.substrate` as a git-backed store |
-| `substrate add <name>` | New bundle in today's folder, opens `$EDITOR` |
+| `substrate add <name>` | New bundle in today's folder. Opens `$EDITOR` by default; `--body TEXT`, `--from FILE`, or `--from -` (stdin) for scripted input |
 | `substrate list` | List bundles, optionally `--tag` / `--date` filtered |
 | `substrate search <query>` | Substring search across id, tags, body |
 | `substrate get <id>` | Print a bundle to stdout (pipe-friendly) |
