@@ -1,0 +1,33 @@
+# Changelog
+
+All notable changes to this project will be documented in this file. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+## [0.2.0] - 2026-05-24
+
+### Added
+- `substrate ui` — static HTML dashboard with day-grouped timeline, 30-day activity bar chart, "most referenced" leaderboard, tag filter chips, and a modal form to draft new bundles via copy-paste-able shell heredoc.
+- `SUBSTRATE_ACTIVE_FILE` env var — point at any markdown file (`AGENTS.md`, `CLAUDE.md`, custom) where an `ACTIVE BUNDLE` marker declares the current active bundle. Dashboard highlights it.
+- `SUBSTRATE_ACTIVE_MARKER` env var — customize the marker text (default: `ACTIVE BUNDLE`).
+- "Most referenced" score computed without `log_use` dependency: mentions in the active file × 4 + git commit count + (legacy `log_use` count × 2) + active-session bonus.
+
+### Changed
+- README rewritten for open-source release; removed personal examples and internal references.
+- Active-session detection is no longer hardcoded to any personal file path.
+
+### Fixed
+- Bundles without YAML frontmatter now get their id reconstructed as `{date}-{stem}` so they match active-session references and external-file path-extracted ids.
+
+## [0.1.0] - 2026-05-11
+
+### Added
+- Initial CLI: `init`, `add`, `list`, `search`, `get`, `use`, `log`, `edit`, `history`.
+- MCP server (`substrate-mcp`) exposing `list_bundles`, `get_bundle`, `search_bundles`, `get_by_date`, `log_use`.
+- Git-backed bundle store under `~/.substrate/` (override via `SUBSTRATE_HOME`).
+- Markdown + YAML frontmatter bundle format.
+- Append-only `usage.log` as the falsifiable retrieval metric.
+
+[Unreleased]: https://github.com/xlreon/substrate/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/xlreon/substrate/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/xlreon/substrate/releases/tag/v0.1.0

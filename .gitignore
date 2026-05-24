@@ -1,8 +1,23 @@
 __pycache__/
 *.egg-info/
 dist/
+build/
 .venv/
 .pytest_cache/
 .ruff_cache/
+.mypy_cache/
 .coverage
+htmlcov/
+*.pyc
 
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.idea/
+.vscode/
+*.swp
+
+# Local maintainer notes (not shipped)
+HANDOFF.md
