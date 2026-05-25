@@ -174,14 +174,20 @@ Set `SUBSTRATE_ACTIVE_FILE` to point at the markdown file where you declare your
 export SUBSTRATE_ACTIVE_FILE=~/AGENTS.md
 ```
 
-In that file, add a line containing `ACTIVE BUNDLE` and the bundle path:
+In that file, add a line containing `ACTIVE BUNDLE` and either the bundle id (what `substrate list` prints) or the path:
 
 ```markdown
 ## Now
+- **ACTIVE BUNDLE:** 2026-05-24-handoff-deploy-staging
+```
+
+Or path-fragment form:
+
+```markdown
 - **ACTIVE BUNDLE:** `~/.substrate/bundles/2026-05-24/handoff-deploy-staging.md`
 ```
 
-(Marker text is configurable via `SUBSTRATE_ACTIVE_MARKER`.)
+Marker text is configurable via `SUBSTRATE_ACTIVE_MARKER` (e.g. `export SUBSTRATE_ACTIVE_MARKER=PINNED`).
 
 ## CLI surface
 
@@ -197,6 +203,7 @@ In that file, add a line containing `ACTIVE BUNDLE` and the bundle path:
 | `substrate edit <id>` | Open an existing bundle in `$EDITOR` |
 | `substrate history <id>` | `git log` for a specific bundle |
 | `substrate ui` | Generate a static HTML dashboard |
+| `substrate --version` | Print installed version and exit |
 
 Full reference: `substrate --help`. Design notes: [SPEC.md](SPEC.md).
 
