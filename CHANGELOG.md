@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file. The format 
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-05-25
+
 ### Added
 - `substrate add` now supports non-interactive input channels:
   - `--body TEXT` / `-b` — inline body string
@@ -11,6 +13,13 @@ All notable changes to this project will be documented in this file. The format 
   - `--from -` — read body from stdin (pipe-friendly)
   - `--edit` — force open `$EDITOR` after pre-fill (otherwise editor is skipped when a body source is provided)
 - `_resolve_body()` helper for resolving content from `--body`/`--from`, including stdin and frontmatter-stripping when the source file already has YAML frontmatter.
+- `.github/workflows/release.yml` — publishes to PyPI on `v*` tag push via OIDC Trusted Publishing; drafts a GitHub Release with attached `sdist` + `wheel`.
+
+### Changed
+- `SECURITY.md` and `CODE_OF_CONDUCT.md` now name `sidharth.satapathy5@gmail.com` as the disclosure / enforcement contact (was a vague "GitHub profile" pointer).
+
+### Removed
+- `landing/` folder — the canonical landing page now lives at `sidharthsatapathy.com/substrate`; keeping a stale copy in the repo invited drift.
 
 ## [0.2.0] - 2026-05-24
 
@@ -36,6 +45,7 @@ All notable changes to this project will be documented in this file. The format 
 - Markdown + YAML frontmatter bundle format.
 - Append-only `usage.log` as the falsifiable retrieval metric.
 
-[Unreleased]: https://github.com/xlreon/substrate/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/xlreon/substrate/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/xlreon/substrate/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/xlreon/substrate/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/xlreon/substrate/releases/tag/v0.1.0
