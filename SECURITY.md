@@ -8,7 +8,7 @@ The latest minor version on the `main` branch receives security updates.
 
 Substrate is a local-first tool — it has no network surface, no daemon, and runs only on the user's machine. The attack surface is small but not zero (path traversal, YAML injection, shell-injection via `$EDITOR` etc.).
 
-If you find a vulnerability, please **do not** open a public issue. Instead, email the maintainer at `sidharth.satapathy5@gmail.com` (or use [GitHub Security Advisories](https://github.com/xlreon/substrate/security/advisories/new) for private disclosure) with:
+If you find a vulnerability, please **do not** open a public issue. Instead, email the maintainer at `sidharth.satapathy9@gmail.com` (or use [GitHub Security Advisories](https://github.com/xlreon/substrate/security/advisories/new) for private disclosure) with:
 
 - A description of the issue
 - Steps to reproduce

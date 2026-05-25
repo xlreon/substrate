@@ -16,7 +16,7 @@ All notable changes to this project will be documented in this file. The format 
 - `.github/workflows/release.yml` — publishes to PyPI on `v*` tag push via OIDC Trusted Publishing; drafts a GitHub Release with attached `sdist` + `wheel`.
 
 ### Changed
-- `SECURITY.md` and `CODE_OF_CONDUCT.md` now name `sidharth.satapathy5@gmail.com` as the disclosure / enforcement contact (was a vague "GitHub profile" pointer).
+- `SECURITY.md` and `CODE_OF_CONDUCT.md` now name a concrete maintainer email as the disclosure / enforcement contact (was a vague "GitHub profile" pointer).
 
 ### Removed
 - `landing/` folder — the canonical landing page now lives at `sidharthsatapathy.com/substrate`; keeping a stale copy in the repo invited drift.
