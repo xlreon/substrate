@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file. The format 
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-05-25
+
+### Added
+- `substrate --version` / `-V` — prints the installed package version and exits. Reads from `importlib.metadata` so it always matches what `pip show substrate-kb` reports.
+- `SUBSTRATE_ACTIVE_FILE` marker now accepts a bare bundle id (`YYYY-MM-DD-stem`) in addition to the legacy path-fragment form (`bundles/YYYY-MM-DD/stem.md`). The bare-id form matches what `substrate list` prints, so a marker line like `ACTIVE BUNDLE: 2026-05-25-my-bundle` now works out of the box.
+
+### Changed
+- Documented the active-bundle marker format explicitly in the README (was only inferable from source).
+
 ## [0.2.1] - 2026-05-25
 
 ### Added
@@ -45,7 +54,8 @@ All notable changes to this project will be documented in this file. The format 
 - Markdown + YAML frontmatter bundle format.
 - Append-only `usage.log` as the falsifiable retrieval metric.
 
-[Unreleased]: https://github.com/xlreon/substrate/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/xlreon/substrate/compare/v0.2.2...HEAD
+[0.2.2]: https://github.com/xlreon/substrate/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/xlreon/substrate/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/xlreon/substrate/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/xlreon/substrate/releases/tag/v0.1.0

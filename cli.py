@@ -18,8 +18,44 @@ from markdown_it import MarkdownIt
 from rich.console import Console
 from rich.table import Table
 
+PACKAGE_NAME = "substrate-kb"
+
+
+def _package_version() -> str:
+    try:
+        from importlib.metadata import PackageNotFoundError, version
+    except ImportError:
+        return "unknown"
+    try:
+        return version(PACKAGE_NAME)
+    except PackageNotFoundError:
+        return "unknown"
+
+
+def _version_callback(value: bool) -> None:
+    if value:
+        typer.echo(f"substrate {_package_version()}")
+        raise typer.Exit()
+
+
 app = typer.Typer(help="Local prompt+context bundles with versioning.", no_args_is_help=True)
 console = Console()
+
+
+@app.callback()
+def _main(
+    version: bool = typer.Option(
+        False,
+        "--version",
+        "-V",
+        help="Show version and exit.",
+        callback=_version_callback,
+        is_eager=True,
+    ),
+) -> None:
+    """Local prompt+context bundles with versioning."""
+    pass
+
 
 ROOT = Path(os.environ.get("SUBSTRATE_HOME", Path.home() / ".substrate"))
 BUNDLES = ROOT / "bundles"
@@ -405,8 +441,10 @@ def _find_active_bundle_id(text: str) -> str | None:
     """Extract a substrate bundle id from a marker line in user-supplied text.
 
     Looks for the first line containing ``SUBSTRATE_ACTIVE_MARKER`` (default
-    "ACTIVE BUNDLE") and matches a path of shape
-    ``<anything>/bundles/YYYY-MM-DD/<stem>.md``.
+    "ACTIVE BUNDLE"). Accepts two reference formats on the marker line:
+
+    - A path fragment ``<anything>/bundles/YYYY-MM-DD/<stem>.md`` (legacy)
+    - A bare bundle id ``YYYY-MM-DD-<stem>`` (matches what ``substrate list`` prints)
     """
     if not text:
         return None
@@ -418,6 +456,9 @@ def _find_active_bundle_id(text: str) -> str | None:
         if m:
             stem = m.group(2)
             return stem if stem.startswith(m.group(1)) else f"{m.group(1)}-{stem}"
+        m = re.search(r"\b(\d{4}-\d{2}-\d{2}-[a-z0-9][a-z0-9-]*)\b", line)
+        if m:
+            return m.group(1)
     return None
 
 
