@@ -198,62 +198,80 @@ class TestFindActiveBundleId:
     def setup_method(self):
         # Ensure the default marker is in effect for these tests.
         import os
+
         self._saved = os.environ.pop("SUBSTRATE_ACTIVE_MARKER", None)
 
     def teardown_method(self):
         import os
+
         if self._saved is not None:
             os.environ["SUBSTRATE_ACTIVE_MARKER"] = self._saved
 
     def test_path_shape(self):
         from cli import _find_active_bundle_id
-        assert _find_active_bundle_id(
-            "ACTIVE BUNDLE: bundles/2026-05-25/stdin-body-test.md"
-        ) == "2026-05-25-stdin-body-test"
+
+        assert (
+            _find_active_bundle_id("ACTIVE BUNDLE: bundles/2026-05-25/stdin-body-test.md")
+            == "2026-05-25-stdin-body-test"
+        )
 
     def test_bare_id(self):
         from cli import _find_active_bundle_id
-        assert _find_active_bundle_id(
-            "ACTIVE BUNDLE: 2026-05-25-stdin-body-test"
-        ) == "2026-05-25-stdin-body-test"
+
+        assert (
+            _find_active_bundle_id("ACTIVE BUNDLE: 2026-05-25-stdin-body-test")
+            == "2026-05-25-stdin-body-test"
+        )
 
     def test_bare_id_inline_prose(self):
         from cli import _find_active_bundle_id
-        assert _find_active_bundle_id(
-            "The ACTIVE BUNDLE for this session is 2026-05-25-my-bundle which covers..."
-        ) == "2026-05-25-my-bundle"
+
+        assert (
+            _find_active_bundle_id(
+                "The ACTIVE BUNDLE for this session is 2026-05-25-my-bundle which covers..."
+            )
+            == "2026-05-25-my-bundle"
+        )
 
     def test_custom_marker_with_bare_id(self):
         import os
 
         from cli import _find_active_bundle_id
+
         os.environ["SUBSTRATE_ACTIVE_MARKER"] = "PINNED"
         assert _find_active_bundle_id("PINNED: 2026-05-25-foo") == "2026-05-25-foo"
 
     def test_no_marker_line(self):
         from cli import _find_active_bundle_id
+
         assert _find_active_bundle_id("nothing here") is None
 
     def test_marker_without_id(self):
         from cli import _find_active_bundle_id
+
         assert _find_active_bundle_id("ACTIVE BUNDLE: <empty>") is None
 
     def test_empty_text(self):
         from cli import _find_active_bundle_id
+
         assert _find_active_bundle_id("") is None
 
     def test_path_shape_wins_when_both_present(self):
         from cli import _find_active_bundle_id
+
         line = "ACTIVE BUNDLE: bundles/2026-05-25/foo.md (was: 2026-05-24-bar)"
         assert _find_active_bundle_id(line) == "2026-05-25-foo"
 
     def test_first_marker_line_wins(self):
         from cli import _find_active_bundle_id
-        text = "\n".join([
-            "preamble",
-            "ACTIVE BUNDLE: 2026-05-25-first",
-            "later mention ACTIVE BUNDLE: 2026-05-25-second",
-        ])
+
+        text = "\n".join(
+            [
+                "preamble",
+                "ACTIVE BUNDLE: 2026-05-25-first",
+                "later mention ACTIVE BUNDLE: 2026-05-25-second",
+            ]
+        )
         assert _find_active_bundle_id(text) == "2026-05-25-first"
 
 
