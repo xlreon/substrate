@@ -12,7 +12,7 @@ Git-versioned · MCP-native · Lives in your filesystem as plain markdown.
 
 </div>
 
-[📖 Full docs](https://substrate.sidharthsatapathy.com) · [Blog post](https://substrate.sidharthsatapathy.com/blog/2026-05-substrate-and-context-rich-agents)
+[📖 Full docs](https://substrate.sidharthsatapathy.com) · [Blog post](https://sidharthsatapathy.com/blog/substrate-knowledge-bundles-mcp-ai-agents)
 
 ---
 

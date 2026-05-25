@@ -32,6 +32,8 @@ That's the whole thing. Open them in your editor. Diff them with `git`. Grep the
 | Claude Code | [integrations/claude-code.md](integrations/claude-code.md) |
 | Cursor | [integrations/cursor.md](integrations/cursor.md) |
 | Zed | [integrations/zed.md](integrations/zed.md) |
+| Codex CLI | [integrations/codex.md](integrations/codex.md) |
+| Continue | [integrations/continue.md](integrations/continue.md) |
 
 ## More
 
